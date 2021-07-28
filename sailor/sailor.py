@@ -1018,7 +1018,7 @@ class AutoCompleteEdit(Edit):
         super().__init__(value=value, min_size=min_size, **kwargs)
         self.complete_fn = complete_fn
         self.popup_visible = False
-        self.select = SelectList([], 0, width=70, show_captions_at=30)
+        self.select = SelectList(['-'], 0, width=70, show_captions_at=30)
         self.popup = Popup(self.select, on_close=self.on_close, under_script='( ^N, ^P to move, Enter to select )')
         self.layer = None
 
