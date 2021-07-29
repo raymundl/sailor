@@ -152,7 +152,7 @@ class Display(View):
             for i, line in enumerate(lines):
                 padding = ' ' * min(print_width, self.min_width - len(line))
                 try:
-                    rect.screen.addstr(rect.y + i, rect.x, line[:print_width] + padding,
+                    rect.screen.addstr(int(rect.y + i), int(rect.x), line[:print_width] + padding,
                                        curses.color_pair(col) | self.attr)
                 except curses.error as e:
                     logger.warning(str(e))
@@ -352,7 +352,7 @@ class Box(View):
 
             try:
                 rect.resize(rect_w, rect_h).clear()
-                textpad.rectangle(rect.screen, rect.y, rect.x, y1, x1)
+                textpad.rectangle(rect.screen, int(rect.y), int(rect.x), int(y1), int(x1))
                 if self.caption:
                     self.caption.display(rect.adj_rect(3, 0))
                 if self.under_script:
@@ -1014,10 +1014,12 @@ class AutoCompleteEdit(Edit):
     the cursor, and should return all possible completions.
     """
 
-    def __init__(self, value, complete_fn, min_size=0, **kwargs):
+    def __init__(self, value, history, complete_fn, min_size=0, **kwargs):
         super().__init__(value=value, min_size=min_size, **kwargs)
         self.complete_fn = complete_fn
         self.popup_visible = False
+        self.history = history
+        self.hidx = -1  # init pos in history, ^J, ^K to move
         self.select = SelectList(['-'], 0, width=70, show_captions_at=30)
         self.popup = Popup(self.select, on_close=self.on_close, under_script='( ^N, ^P to move, Enter to select )')
         self.layer = None
@@ -1030,7 +1032,7 @@ class AutoCompleteEdit(Edit):
             self.popup.x = self.rendered.rect.x
             self.popup.y = self.rendered.rect.y + 1
             self.layer = app.push_layer(self.popup, modal=False)
-        if not visible and self.layer:
+        elif not visible and self.layer:
             self.layer.remove()
             self.layer = None
 
@@ -1065,22 +1067,35 @@ class AutoCompleteEdit(Edit):
             interesting = (len(self.select.choices) > 1
                            or (len(self.select.choices) == 1) and self.select.choices[0] != word)
             self.show_popup(ev.app, interesting)
+
         if ev.type == 'blur':
             self.show_popup(ev.app, False)
-
-        if ev.type == 'key' and self.layer:
-            if ev.key in [CTRL_J, CTRL_N]:
-                self.select.adjust(1)
-                ev.stop()
-            if ev.key in [CTRL_K, CTRL_P]:
-                self.select.adjust(-1)
-                ev.stop()
-            if is_enter(ev):
-                self.replace_cursor_word(self.select.value)
-                self.show_popup(ev.app, False)
-                ev.stop()
-            if ev.key in [curses.ascii.ESC]:
-                self.show_popup(ev.app, False)
+        elif ev.type == 'key':
+            if self.layer:
+                if ev.key in [CTRL_N]:
+                    self.select.adjust(1)
+                    ev.stop()
+                elif ev.key in [CTRL_P]:
+                    self.select.adjust(-1)
+                    ev.stop()
+                elif is_enter(ev):
+                    self.replace_cursor_word(self.select.value)
+                    self.show_popup(ev.app, False)
+                    ev.stop()
+                elif ev.key in [curses.ascii.ESC]:
+                    self.show_popup(ev.app, False)
+                    ev.stop()
+            if ev.key in [CTRL_J, CTRL_K]:
+                if self.history:
+                    if ev.key == CTRL_J:
+                        self.hidx += 1
+                    else:
+                        self.hidx -= 1
+                    if self.hidx >= len(self.history):
+                        self.hidx = 0
+                    elif self.hidx < 0:
+                        self.hidx = len(self.history) - 1
+                    self._value = self.history[self.hidx]
                 ev.stop()
 
 
@@ -1261,10 +1276,12 @@ class Rect(object):
 
     def clear(self):
         line = ' ' * self.w
+        x = int(self.x)
+        y = int(self.y)
         logger.error('CLEAR: %r (%r, %r, %r, %r)' % (type(self).__name__, self.x, self.y, self.w, self.h))
-        for j in range(self.y, self.y + self.h):
+        for j in range(y, y + self.h):
             try:
-                self.screen.addstr(j, self.x, line)
+                self.screen.addstr(j, x, line)
             except curses.error as e:
                 logger.warning(str(e))
 

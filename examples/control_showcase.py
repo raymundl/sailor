@@ -1,5 +1,5 @@
 """Sample sailor program."""
-import sailor as s
+from sailor import sailor as s
 
 
 def do_exit(app):
@@ -54,7 +54,10 @@ def main():
             s.Labeled('Time', s.Time()),
             s.Labeled('Popup', s.Button('Hit me', on_click=show_popup)),
             s.Labeled('Edit', s.Edit('you can edit this')),
-            s.Labeled('AutoComplete', s.AutoCompleteEdit('type here', complete_fn)),
+            s.Labeled('AutoComplete', s.AutoCompleteEdit('type here', [
+                'history1',
+                'history2'
+            ], complete_fn)),
             s.Labeled('SwitchableCtrl', switchable),
             s.Labeled('', s.Button('Next', on_click=do_next)),
             s.Labeled('Button', s.Button('Exit', on_click=do_exit)),
