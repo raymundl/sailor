@@ -994,7 +994,7 @@ class Edit(Control):
                     self.cursor = max(0, self.cursor - 1)
                 ev.stop()
             elif ev.key in [curses.ascii.DEL, OTHER_DEL]:
-                if self.cursor < len(self._value) - 1:
+                if self.cursor <= len(self._value) - 1:
                     self._value = self._value[:self.cursor] + self._value[self.cursor + 1:]
                 ev.stop()
             if ev.key == curses.KEY_LEFT and self.cursor > 0:
