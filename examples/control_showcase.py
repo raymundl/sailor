@@ -22,6 +22,13 @@ def show_popup(app):
     popup.show(app)
 
 
+def show_changed(app, was, tobe):
+    popup = s.Popup(s.Stacked([
+        s.Text(f'Value from [{was}] to [{tobe}]!')
+    ]), on_close=lambda x, y: None)
+    popup.show(app)
+
+
 def complete_fn(word):
     candidates = ['foo', 'bar', 'baz', 'sailor', 'curses', 'walk', 'hello', 'world']
     return [w for w in candidates if w.startswith(word)]
@@ -49,7 +56,7 @@ def main():
             ], margin=1)),
             s.Labeled('Panel', s.Panel([s.Text('Inner panel just because we can')])),
             s.Labeled('SelectList', s.SelectList(options, 0)),
-            s.Labeled('Combo', s.Combo(options)),
+            s.Labeled('Combo', s.Combo(options, on_changed=show_changed)),
             s.Labeled('DateCombo', s.DateCombo()),
             s.Labeled('Time', s.Time()),
             s.Labeled('Popup', s.Button('Hit me', on_click=show_popup)),

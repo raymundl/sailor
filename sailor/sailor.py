@@ -765,9 +765,10 @@ def edit_popup(app, on_close, value='', caption=''):
 class Combo(Control):
     """A SelectList in a popup."""
 
-    def __init__(self, choices, index=0, **kwargs):
+    def __init__(self, choices, on_changed=None, index=0, **kwargs):
         super().__init__(**kwargs)
         self._choices = choices
+        self.on_changed = on_changed
         self.index = index
         self.can_focus = True
         self.last_combo = None
@@ -814,7 +815,12 @@ class Combo(Control):
             ev.stop()
 
     def on_popup_close(self, popup, app):
-        self.index = popup.inner.index
+        if self.index != popup.inner.index:
+            was = str(self.choices[self.index])
+            tobe = str(self.choices[popup.inner.index])
+            self.index = popup.inner.index
+            if callable(self.on_changed):
+                self.on_changed(app, was, tobe)
 
 
 class Toasty(Control):
