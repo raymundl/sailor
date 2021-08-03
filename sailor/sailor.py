@@ -765,10 +765,10 @@ def edit_popup(app, on_close, value='', caption=''):
 class Combo(Control):
     """A SelectList in a popup."""
 
-    def __init__(self, choices, on_changed=None, index=0, **kwargs):
+    def __init__(self, choices, on_change=None, index=0, **kwargs):
         super().__init__(**kwargs)
         self._choices = choices
-        self.on_changed = on_changed
+        self.on_change = on_change
         self.index = index
         self.can_focus = True
         self.last_combo = None
@@ -819,8 +819,8 @@ class Combo(Control):
             was = str(self.choices[self.index])
             tobe = str(self.choices[popup.inner.index])
             self.index = popup.inner.index
-            if callable(self.on_changed):
-                self.on_changed(app, was, tobe)
+            if callable(self.on_change):
+                self.on_change(app, was, tobe)
 
 
 class Toasty(Control):
@@ -908,9 +908,10 @@ class Edit(Control):
         character.
     """
 
-    def __init__(self, value, min_size=0, highlight=None, **kwargs):
+    def __init__(self, value, on_enter=None, min_size=0, highlight=None, **kwargs):
         super().__init__(**kwargs)
         self._value = value
+        self.on_enter = on_enter
         self.min_size = min_size
         self.can_focus = True
         self.cursor = len(value)
@@ -985,10 +986,10 @@ class Edit(Control):
             if ev.key in [CTRL_A, curses.KEY_HOME]:
                 self.cursor = 0
                 ev.stop()
-            if ev.key in [CTRL_E, curses.KEY_END]:
+            elif ev.key in [CTRL_E, curses.KEY_END]:
                 self.cursor = len(self._value)
                 ev.stop()
-            if ev.key in [curses.KEY_BACKSPACE, MAC_BACKSPACE]:
+            elif ev.key in [curses.KEY_BACKSPACE, MAC_BACKSPACE]:
                 if self.cursor > 0:
                     self._value = self._value[:self.cursor - 1] + self._value[self.cursor:]
                     self.cursor = max(0, self.cursor - 1)
@@ -997,17 +998,21 @@ class Edit(Control):
                 if self.cursor <= len(self._value) - 1:
                     self._value = self._value[:self.cursor] + self._value[self.cursor + 1:]
                 ev.stop()
-            if ev.key == curses.KEY_LEFT and self.cursor > 0:
+            elif ev.key == curses.KEY_LEFT and self.cursor > 0:
                 self.cursor -= 1
                 ev.stop()
-            if ev.key == curses.KEY_RIGHT and self.cursor < len(self._value):
+            elif ev.key == curses.KEY_RIGHT and self.cursor < len(self._value):
                 self.cursor += 1
                 ev.stop()
-            if ev.key == CTRL_U:
+            elif ev.key == curses.ascii.ESC:
                 self.value = ''
                 self.cursor = 0
                 ev.stop()
-            if 32 <= ev.key < 127:
+            elif is_enter(ev):
+                if callable(self.on_enter):
+                    self.on_enter(ev.app)
+                ev.stop()
+            elif 32 <= ev.key < 127:
                 self._value = self._value[:self.cursor] + chr(ev.key) + self._value[self.cursor:]
                 self.cursor += 1
                 ev.stop()
@@ -1020,14 +1025,14 @@ class AutoCompleteEdit(Edit):
     the cursor, and should return all possible completions.
     """
 
-    def __init__(self, value, history, complete_fn, min_size=0, **kwargs):
-        super().__init__(value=value, min_size=min_size, **kwargs)
+    def __init__(self, value, history, complete_fn, on_enter=None, min_size=0, **kwargs):
+        super().__init__(value=value, on_enter=on_enter, min_size=min_size, **kwargs)
         self.complete_fn = complete_fn
         self.popup_visible = False
         self.history = history
         self.hidx = -1  # init pos in history, ^J, ^K to move
         self.select = SelectList(['-'], 0, width=70, show_captions_at=30)
-        self.popup = Popup(self.select, on_close=self.on_close, under_script='( ^N, ^P to move, Enter to select )')
+        self.popup = Popup(self.select, on_close=self.on_close, under_script='( ^N, ^P to move, ^U to select )')
         self.layer = None
 
     def on_close(self):
@@ -1078,17 +1083,17 @@ class AutoCompleteEdit(Edit):
             self.show_popup(ev.app, False)
         elif ev.type == 'key':
             if self.layer:
-                if ev.key in [CTRL_N]:
+                if ev.key == CTRL_N:
                     self.select.adjust(1)
                     ev.stop()
-                elif ev.key in [CTRL_P]:
+                elif ev.key == CTRL_P:
                     self.select.adjust(-1)
                     ev.stop()
-                elif is_enter(ev):
+                elif ev.key == CTRL_U:
                     self.replace_cursor_word(self.select.value)
                     self.show_popup(ev.app, False)
                     ev.stop()
-                elif ev.key in [curses.ascii.ESC]:
+                elif ev.key == curses.ascii.ESC:
                     self.show_popup(ev.app, False)
                     ev.stop()
             if ev.key in [CTRL_J, CTRL_K]:

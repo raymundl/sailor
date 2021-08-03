@@ -22,9 +22,17 @@ def show_popup(app):
     popup.show(app)
 
 
-def show_changed(app, was, tobe):
+def show_change(app, was, tobe):
     popup = s.Popup(s.Stacked([
         s.Text(f'Value from [{was}] to [{tobe}]!')
+    ]), on_close=lambda x, y: None)
+    popup.show(app)
+
+
+def show_choice(app):
+    popup = s.Popup(s.Stacked([
+        s.Button("Option1", on_click=do_exit),
+        s.Button("Option2", on_click=do_exit),
     ]), on_close=lambda x, y: None)
     popup.show(app)
 
@@ -56,7 +64,7 @@ def main():
             ], margin=1)),
             s.Labeled('Panel', s.Panel([s.Text('Inner panel just because we can')])),
             s.Labeled('SelectList', s.SelectList(options, 0)),
-            s.Labeled('Combo', s.Combo(options, on_changed=show_changed)),
+            s.Labeled('Combo', s.Combo(options, on_change=show_change)),
             s.Labeled('DateCombo', s.DateCombo()),
             s.Labeled('Time', s.Time()),
             s.Labeled('Popup', s.Button('Hit me', on_click=show_popup)),
@@ -64,7 +72,7 @@ def main():
             s.Labeled('AutoComplete', s.AutoCompleteEdit('type here', [
                 'history1',
                 'history2'
-            ], complete_fn)),
+            ], complete_fn, on_enter=show_choice)),
             s.Labeled('SwitchableCtrl', switchable),
             s.Labeled('', s.Button('Next', on_click=do_next)),
             s.Labeled('Button', s.Button('Exit', on_click=do_exit)),
