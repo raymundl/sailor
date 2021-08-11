@@ -38,7 +38,7 @@ def show_choice(app):
 
 
 def complete_fn(word):
-    candidates = ['foo', 'bar', 'baz', 'sailor', 'curses', 'walk', 'hello', 'world']
+    candidates = ['foo-abc-1', 'foo-def-2', 'baz', 'sailor', 'curses', 'walk', 'hello', 'world']
     return [w for w in candidates if w.startswith(word)]
 
 

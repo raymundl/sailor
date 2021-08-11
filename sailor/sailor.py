@@ -1056,12 +1056,15 @@ class AutoCompleteEdit(Edit):
 
         Returns (offset, string).
         """
+        def nonspace(s):
+            return s != ' '
+
         i = min(self.cursor, len(self.value) - 1)  # Inclusive
-        while (i > 0 and self.value[i].isalpha() and
-               self.value[i - 1].isalpha()):
+        while (i > 0 and nonspace(self.value[i]) and
+               nonspace(self.value[i - 1])):
             i -= 1
         j = i + 1  # Exclusive
-        while j < len(self.value) and self.value[j].isalpha():
+        while j < len(self.value) and nonspace(self.value[j]):
             j += 1
         return i, self.value[i:j]
 
